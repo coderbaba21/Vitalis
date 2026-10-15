@@ -1,0 +1,923 @@
+{
+  "project": "VITALIS sleep-disorder classification",
+  "dataset_source": "Kaggle Sleep Health and Lifestyle Dataset",
+  "classes": [
+    "None",
+    "Insomnia",
+    "Sleep Apnea"
+  ],
+  "split": {
+    "test_size": 0.2,
+    "random_state": 42,
+    "train_rows": 299,
+    "test_rows": 75,
+    "cv_folds": 5
+  },
+  "winner": "logistic_regression",
+  "models": {
+    "logistic_regression": {
+      "key": "logistic_regression",
+      "accuracy": 0.933333,
+      "macro_f1": 0.907592,
+      "train_macro_f1": 0.892335,
+      "cv_macro_f1": 0.882019,
+      "cv_macro_f1_std": 0.046468,
+      "per_class": {
+        "None": {
+          "precision": 1.0,
+          "recall": 0.954545
+        },
+        "Insomnia": {
+          "precision": 0.923077,
+          "recall": 0.8
+        },
+        "Sleep Apnea": {
+          "precision": 0.8,
+          "recall": 1.0
+        }
+      },
+      "confusion_matrix": [
+        [
+          42,
+          1,
+          1
+        ],
+        [
+          0,
+          12,
+          3
+        ],
+        [
+          0,
+          0,
+          16
+        ]
+      ],
+      "label": "Logistic Regression"
+    },
+    "naive_bayes": {
+      "key": "naive_bayes",
+      "accuracy": 0.893333,
+      "macro_f1": 0.876801,
+      "train_macro_f1": 0.858703,
+      "cv_macro_f1": 0.851435,
+      "cv_macro_f1_std": 0.05246,
+      "per_class": {
+        "None": {
+          "precision": 1.0,
+          "recall": 0.863636
+        },
+        "Insomnia": {
+          "precision": 0.8125,
+          "recall": 0.866667
+        },
+        "Sleep Apnea": {
+          "precision": 0.761905,
+          "recall": 1.0
+        }
+      },
+      "confusion_matrix": [
+        [
+          38,
+          3,
+          3
+        ],
+        [
+          0,
+          13,
+          2
+        ],
+        [
+          0,
+          0,
+          16
+        ]
+      ],
+      "label": "Naive Bayes"
+    },
+    "random_forest": {
+      "key": "random_forest",
+      "accuracy": 0.853333,
+      "macro_f1": 0.818747,
+      "train_macro_f1": 0.896108,
+      "cv_macro_f1": 0.833631,
+      "cv_macro_f1_std": 0.025751,
+      "per_class": {
+        "None": {
+          "precision": 1.0,
+          "recall": 0.863636
+        },
+        "Insomnia": {
+          "precision": 0.684211,
+          "recall": 0.866667
+        },
+        "Sleep Apnea": {
+          "precision": 0.722222,
+          "recall": 0.8125
+        }
+      },
+      "confusion_matrix": [
+        [
+          38,
+          3,
+          3
+        ],
+        [
+          0,
+          13,
+          2
+        ],
+        [
+          0,
+          3,
+          13
+        ]
+      ],
+      "label": "Random Forest"
+    }
+  },
+  "comparison": [
+    {
+      "key": "logistic_regression",
+      "model": "Logistic Regression",
+      "accuracy": 0.933333,
+      "macro_f1": 0.907592,
+      "cv_macro_f1": 0.882019
+    },
+    {
+      "key": "naive_bayes",
+      "model": "Naive Bayes",
+      "accuracy": 0.893333,
+      "macro_f1": 0.876801,
+      "cv_macro_f1": 0.851435
+    },
+    {
+      "key": "random_forest",
+      "model": "Random Forest",
+      "accuracy": 0.853333,
+      "macro_f1": 0.818747,
+      "cv_macro_f1": 0.833631
+    }
+  ],
+  "confusion": {
+    "logistic_regression": [
+      [
+        42,
+        1,
+        1
+      ],
+      [
+        0,
+        12,
+        3
+      ],
+      [
+        0,
+        0,
+        16
+      ]
+    ],
+    "naive_bayes": [
+      [
+        38,
+        3,
+        3
+      ],
+      [
+        0,
+        13,
+        2
+      ],
+      [
+        0,
+        0,
+        16
+      ]
+    ],
+    "random_forest": [
+      [
+        38,
+        3,
+        3
+      ],
+      [
+        0,
+        13,
+        2
+      ],
+      [
+        0,
+        3,
+        13
+      ]
+    ]
+  },
+  "loss_curve": [
+    {
+      "epoch": 1,
+      "loss": 0.9645401495131671
+    },
+    {
+      "epoch": 2,
+      "loss": 0.869743915078212
+    },
+    {
+      "epoch": 3,
+      "loss": 0.8004059090440773
+    },
+    {
+      "epoch": 4,
+      "loss": 0.747907601195927
+    },
+    {
+      "epoch": 5,
+      "loss": 0.706935440458277
+    },
+    {
+      "epoch": 6,
+      "loss": 0.6741332673920438
+    },
+    {
+      "epoch": 7,
+      "loss": 0.6473090562385406
+    },
+    {
+      "epoch": 8,
+      "loss": 0.6249821136988581
+    },
+    {
+      "epoch": 9,
+      "loss": 0.6061207011349153
+    },
+    {
+      "epoch": 10,
+      "loss": 0.5899856178459507
+    },
+    {
+      "epoch": 11,
+      "loss": 0.5760340077114727
+    },
+    {
+      "epoch": 12,
+      "loss": 0.5638583909227464
+    },
+    {
+      "epoch": 13,
+      "loss": 0.5531469222423209
+    },
+    {
+      "epoch": 14,
+      "loss": 0.5436568111897969
+    },
+    {
+      "epoch": 15,
+      "loss": 0.5351961236867001
+    },
+    {
+      "epoch": 16,
+      "loss": 0.5276110533567002
+    },
+    {
+      "epoch": 17,
+      "loss": 0.5207768433788899
+    },
+    {
+      "epoch": 18,
+      "loss": 0.5145911955309693
+    },
+    {
+      "epoch": 19,
+      "loss": 0.5089694062128456
+    },
+    {
+      "epoch": 20,
+      "loss": 0.5038407227233926
+    },
+    {
+      "epoch": 21,
+      "loss": 0.4991455757762022
+    },
+    {
+      "epoch": 22,
+      "loss": 0.49483345070686197
+    },
+    {
+      "epoch": 23,
+      "loss": 0.4908612307340364
+    },
+    {
+      "epoch": 24,
+      "loss": 0.4871918936485549
+    },
+    {
+      "epoch": 25,
+      "loss": 0.4837934763154644
+    },
+    {
+      "epoch": 26,
+      "loss": 0.480638244398563
+    },
+    {
+      "epoch": 27,
+      "loss": 0.4777020209938101
+    },
+    {
+      "epoch": 28,
+      "loss": 0.4749636395112734
+    },
+    {
+      "epoch": 29,
+      "loss": 0.472404494588531
+    },
+    {
+      "epoch": 30,
+      "loss": 0.470008171005272
+    },
+    {
+      "epoch": 31,
+      "loss": 0.4677601351509124
+    },
+    {
+      "epoch": 32,
+      "loss": 0.465647477025039
+    },
+    {
+      "epoch": 33,
+      "loss": 0.46365869333974247
+    },
+    {
+      "epoch": 34,
+      "loss": 0.46178350426642856
+    },
+    {
+      "epoch": 35,
+      "loss": 0.4600126978868569
+    },
+    {
+      "epoch": 36,
+      "loss": 0.4583379975840124
+    },
+    {
+      "epoch": 37,
+      "loss": 0.4567519485267428
+    },
+    {
+      "epoch": 38,
+      "loss": 0.4552478201245449
+    },
+    {
+      "epoch": 39,
+      "loss": 0.4538195219011219
+    },
+    {
+      "epoch": 40,
+      "loss": 0.4524615306915607
+    }
+  ],
+  "oob_curve": [
+    {
+      "n_trees": 40,
+      "oob_error": 0.137124
+    },
+    {
+      "n_trees": 60,
+      "oob_error": 0.140468
+    },
+    {
+      "n_trees": 80,
+      "oob_error": 0.140468
+    },
+    {
+      "n_trees": 100,
+      "oob_error": 0.143813
+    },
+    {
+      "n_trees": 120,
+      "oob_error": 0.147157
+    },
+    {
+      "n_trees": 140,
+      "oob_error": 0.140468
+    },
+    {
+      "n_trees": 160,
+      "oob_error": 0.140468
+    },
+    {
+      "n_trees": 180,
+      "oob_error": 0.140468
+    },
+    {
+      "n_trees": 200,
+      "oob_error": 0.143813
+    }
+  ],
+  "learning_curves": {
+    "train_sizes": [
+      89,
+      142,
+      194,
+      246,
+      299
+    ],
+    "series": {
+      "logistic_regression": {
+        "train_f1": [
+          0.912518,
+          0.901962,
+          0.899807,
+          0.90053,
+          0.901851
+        ],
+        "val_f1": [
+          0.863804,
+          0.873255,
+          0.879611,
+          0.887585,
+          0.884275
+        ]
+      },
+      "naive_bayes": {
+        "train_f1": [
+          0.794639,
+          0.781149,
+          0.786936,
+          0.852677,
+          0.872247
+        ],
+        "val_f1": [
+          0.733015,
+          0.753546,
+          0.751512,
+          0.825301,
+          0.852379
+        ]
+      },
+      "random_forest": {
+        "train_f1": [
+          0.929973,
+          0.916419,
+          0.914861,
+          0.911608,
+          0.911957
+        ],
+        "val_f1": [
+          0.82451,
+          0.816888,
+          0.830642,
+          0.836142,
+          0.851633
+        ]
+      }
+    }
+  },
+  "feature_importance": [
+    {
+      "feature": "Systolic",
+      "importance": 0.14455
+    },
+    {
+      "feature": "Diastolic",
+      "importance": 0.138809
+    },
+    {
+      "feature": "Sleep Duration",
+      "importance": 0.105532
+    },
+    {
+      "feature": "BMI Category_Overweight",
+      "importance": 0.094851
+    },
+    {
+      "feature": "Age",
+      "importance": 0.090595
+    },
+    {
+      "feature": "BMI Category_Normal",
+      "importance": 0.083978
+    },
+    {
+      "feature": "Physical Activity Level",
+      "importance": 0.071605
+    },
+    {
+      "feature": "Occupation_Nurse",
+      "importance": 0.069063
+    },
+    {
+      "feature": "Daily Steps",
+      "importance": 0.05621
+    },
+    {
+      "feature": "Heart Rate",
+      "importance": 0.037829
+    },
+    {
+      "feature": "Stress Level",
+      "importance": 0.02178
+    },
+    {
+      "feature": "Quality of Sleep",
+      "importance": 0.018939
+    }
+  ],
+  "dataset": {
+    "rows": 374,
+    "class_counts": [
+      {
+        "label": "None",
+        "count": 219
+      },
+      {
+        "label": "Insomnia",
+        "count": 77
+      },
+      {
+        "label": "Sleep Apnea",
+        "count": 78
+      }
+    ],
+    "distributions": {
+      "Sleep Duration": [
+        {
+          "label": "5.8-6.1",
+          "None": 28,
+          "Insomnia": 3,
+          "Sleep Apnea": 31
+        },
+        {
+          "label": "6.1-6.5",
+          "None": 10,
+          "Insomnia": 20,
+          "Sleep Apnea": 4
+        },
+        {
+          "label": "6.5-6.8",
+          "None": 5,
+          "Insomnia": 46,
+          "Sleep Apnea": 5
+        },
+        {
+          "label": "6.8-7.2",
+          "None": 21,
+          "Insomnia": 0,
+          "Sleep Apnea": 1
+        },
+        {
+          "label": "7.2-7.5",
+          "None": 48,
+          "Insomnia": 4,
+          "Sleep Apnea": 3
+        },
+        {
+          "label": "7.5-7.8",
+          "None": 62,
+          "Insomnia": 3,
+          "Sleep Apnea": 2
+        },
+        {
+          "label": "7.8-8.2",
+          "None": 12,
+          "Insomnia": 0,
+          "Sleep Apnea": 23
+        },
+        {
+          "label": "8.2-8.5",
+          "None": 33,
+          "Insomnia": 1,
+          "Sleep Apnea": 9
+        }
+      ],
+      "Stress Level": [
+        {
+          "label": "3",
+          "None": 40,
+          "Insomnia": 1,
+          "Sleep Apnea": 30
+        },
+        {
+          "label": "4",
+          "None": 43,
+          "Insomnia": 24,
+          "Sleep Apnea": 3
+        },
+        {
+          "label": "5",
+          "None": 57,
+          "Insomnia": 6,
+          "Sleep Apnea": 4
+        },
+        {
+          "label": "6",
+          "None": 43,
+          "Insomnia": 2,
+          "Sleep Apnea": 1
+        },
+        {
+          "label": "7",
+          "None": 3,
+          "Insomnia": 41,
+          "Sleep Apnea": 6
+        },
+        {
+          "label": "8",
+          "None": 33,
+          "Insomnia": 3,
+          "Sleep Apnea": 34
+        }
+      ],
+      "Heart Rate": [
+        {
+          "label": "65.0-67.6",
+          "None": 43,
+          "Insomnia": 26,
+          "Sleep Apnea": 0
+        },
+        {
+          "label": "67.6-70.2",
+          "None": 134,
+          "Insomnia": 5,
+          "Sleep Apnea": 33
+        },
+        {
+          "label": "70.2-72.9",
+          "None": 30,
+          "Insomnia": 36,
+          "Sleep Apnea": 3
+        },
+        {
+          "label": "72.9-75.5",
+          "None": 8,
+          "Insomnia": 2,
+          "Sleep Apnea": 30
+        },
+        {
+          "label": "75.5-78.1",
+          "None": 4,
+          "Insomnia": 2,
+          "Sleep Apnea": 3
+        },
+        {
+          "label": "78.1-80.8",
+          "None": 0,
+          "Insomnia": 2,
+          "Sleep Apnea": 1
+        },
+        {
+          "label": "80.8-83.4",
+          "None": 0,
+          "Insomnia": 3,
+          "Sleep Apnea": 2
+        },
+        {
+          "label": "83.4-86.0",
+          "None": 0,
+          "Insomnia": 1,
+          "Sleep Apnea": 6
+        }
+      ],
+      "Physical Activity Level": [
+        {
+          "label": "30.0-37.5",
+          "None": 60,
+          "Insomnia": 7,
+          "Sleep Apnea": 7
+        },
+        {
+          "label": "37.5-45.0",
+          "None": 4,
+          "Insomnia": 3,
+          "Sleep Apnea": 1
+        },
+        {
+          "label": "45.0-52.5",
+          "None": 11,
+          "Insomnia": 59,
+          "Sleep Apnea": 3
+        },
+        {
+          "label": "52.5-60.0",
+          "None": 6,
+          "Insomnia": 0,
+          "Sleep Apnea": 0
+        },
+        {
+          "label": "60.0-67.5",
+          "None": 64,
+          "Insomnia": 4,
+          "Sleep Apnea": 4
+        },
+        {
+          "label": "67.5-75.0",
+          "None": 3,
+          "Insomnia": 0,
+          "Sleep Apnea": 0
+        },
+        {
+          "label": "75.0-82.5",
+          "None": 38,
+          "Insomnia": 0,
+          "Sleep Apnea": 31
+        },
+        {
+          "label": "82.5-90.0",
+          "None": 33,
+          "Insomnia": 4,
+          "Sleep Apnea": 32
+        }
+      ]
+    },
+    "correlation": {
+      "labels": [
+        "Age",
+        "Sleep Duration",
+        "Quality of Sleep",
+        "Physical Activity Level",
+        "Stress Level",
+        "Heart Rate",
+        "Daily Steps",
+        "Systolic",
+        "Diastolic"
+      ],
+      "matrix": [
+        [
+          1.0,
+          0.3447,
+          0.4737,
+          0.179,
+          -0.4223,
+          -0.2256,
+          0.058,
+          0.6059,
+          0.5938
+        ],
+        [
+          0.3447,
+          1.0,
+          0.8832,
+          0.2124,
+          -0.811,
+          -0.5165,
+          -0.0395,
+          -0.1804,
+          -0.1666
+        ],
+        [
+          0.4737,
+          0.8832,
+          1.0,
+          0.1929,
+          -0.8988,
+          -0.6599,
+          0.0168,
+          -0.1216,
+          -0.1102
+        ],
+        [
+          0.179,
+          0.2124,
+          0.1929,
+          1.0,
+          -0.0341,
+          0.137,
+          0.7727,
+          0.2654,
+          0.3827
+        ],
+        [
+          -0.4223,
+          -0.811,
+          -0.8988,
+          -0.0341,
+          1.0,
+          0.67,
+          0.1868,
+          0.1028,
+          0.0918
+        ],
+        [
+          -0.2256,
+          -0.5165,
+          -0.6599,
+          0.137,
+          0.67,
+          1.0,
+          -0.0303,
+          0.2941,
+          0.2711
+        ],
+        [
+          0.058,
+          -0.0395,
+          0.0168,
+          0.7727,
+          0.1868,
+          -0.0303,
+          1.0,
+          0.1033,
+          0.242
+        ],
+        [
+          0.6059,
+          -0.1804,
+          -0.1216,
+          0.2654,
+          0.1028,
+          0.2941,
+          0.1033,
+          1.0,
+          0.9729
+        ],
+        [
+          0.5938,
+          -0.1666,
+          -0.1102,
+          0.3827,
+          0.0918,
+          0.2711,
+          0.242,
+          0.9729,
+          1.0
+        ]
+      ]
+    },
+    "options": {
+      "gender": [
+        "Female",
+        "Male"
+      ],
+      "occupation": [
+        "Accountant",
+        "Doctor",
+        "Engineer",
+        "Lawyer",
+        "Manager",
+        "Nurse",
+        "Sales Representative",
+        "Salesperson",
+        "Scientist",
+        "Software Engineer",
+        "Teacher"
+      ],
+      "bmi_category": [
+        "Normal",
+        "Overweight",
+        "Obese"
+      ]
+    },
+    "presets": {
+      "None": {
+        "label": "None",
+        "age": 35,
+        "gender": "Male",
+        "occupation": "Software Engineer",
+        "sleep_duration": 7.5,
+        "quality_of_sleep": 8,
+        "physical_activity": 60,
+        "stress_level": 5,
+        "bmi_category": "Normal",
+        "systolic": 120,
+        "diastolic": 80,
+        "heart_rate": 70,
+        "daily_steps": 8000
+      },
+      "Insomnia": {
+        "label": "Insomnia",
+        "age": 43,
+        "gender": "Male",
+        "occupation": "Salesperson",
+        "sleep_duration": 6.5,
+        "quality_of_sleep": 6,
+        "physical_activity": 45,
+        "stress_level": 7,
+        "bmi_category": "Overweight",
+        "systolic": 130,
+        "diastolic": 85,
+        "heart_rate": 72,
+        "daily_steps": 6000
+      },
+      "Sleep Apnea": {
+        "label": "Sleep Apnea",
+        "age": 49,
+        "gender": "Female",
+        "occupation": "Nurse",
+        "sleep_duration": 6.2,
+        "quality_of_sleep": 6,
+        "physical_activity": 90,
+        "stress_level": 8,
+        "bmi_category": "Overweight",
+        "systolic": 140,
+        "diastolic": 95,
+        "heart_rate": 75,
+        "daily_steps": 10000
+      }
+    }
+  },
+  "notes": {
+    "label": "Blank Sleep Disorder cells are coded as None. That is the dataset's no-disorder class.",
+    "loss_curve": "Training log-loss versus epoch from SGDClassifier on the logistic objective. The scored logistic model is LogisticRegression.",
+    "naive_bayes": "Gaussian Naive Bayes has no epoch loss. It is shown on the learning curve and the comparison chart.",
+    "oob_curve": "Random forest out-of-bag error as trees are added. The saved forest is a separate 200-tree fit.",
+    "scope": "Lifestyle screening on 374 public records. Not a medical diagnosis."
+  }
+}

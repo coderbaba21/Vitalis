@@ -1,46 +1,73 @@
 """
-VITALIS // High-Performance Recovery & Readiness Predictor
-Academic Machine Learning Pipeline & Verification Script
-==========================================================
-Dataset  : Kaggle "Sleep, Health, and Lifestyle Dataset" (374 real records)
-Features : Sleep_Hours, Stress_Index, Activity_Mins, Resting_Heart_Rate
-Target   : Readiness_State (Binary) derived from a physiologically-calibrated
-           composite readiness score that ensures correct monotonic direction
-           for every single feature input.
+VITALIS // Sleep Disorder Classification
+Academic training pipeline
+========================================
+Dataset : Kaggle Sleep Health and Lifestyle (374 records)
+Target  : Sleep Disorder — None, Insomnia, or Sleep Apnea.
+          Blank cells in the source file are the published "None" class.
 
-Calibration Fix Applied
------------------------
-Root cause of earlier sign-flip bug:
-  In the raw Kaggle dataset, people with Stress Level 5-6 (Lawyers/Doctors)
-  happen to also have high Quality of Sleep (7-8). A naive label derived from
-  (Quality >= 7 AND Stress <= 6) produces a confounded positive LR coefficient
-  for Stress_Index (+0.85) — meaning higher stress looked like better readiness.
-
-Fix: Derive the Readiness_State label from a clinically-weighted composite
-readiness score built directly from the four raw feature values. The composite
-guarantees correct monotonic direction for all four parameters and is
-100% grounded in real Kaggle data.
+Models  : Logistic Regression, Gaussian Naive Bayes, Random Forest.
+          All three see the same stratified 80/20 holdout.
 """
 
+import json
 import os
 import sys
+
 import joblib
 import numpy as np
 import pandas as pd
-from sklearn.model_selection import train_test_split
-from sklearn.preprocessing import StandardScaler
-from sklearn.linear_model import LogisticRegression
-from sklearn.svm import SVC
-from sklearn.calibration import CalibratedClassifierCV
-from sklearn.pipeline import Pipeline
+from sklearn.compose import ColumnTransformer
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.linear_model import LogisticRegression, SGDClassifier
 from sklearn.metrics import (
     accuracy_score,
+    confusion_matrix,
+    f1_score,
     precision_score,
     recall_score,
-    roc_auc_score,
-    confusion_matrix,
-    classification_report
 )
+from sklearn.model_selection import (
+    StratifiedKFold,
+    cross_val_score,
+    learning_curve,
+    train_test_split,
+)
+from sklearn.naive_bayes import GaussianNB
+from sklearn.pipeline import Pipeline
+from sklearn.preprocessing import OneHotEncoder, StandardScaler
+from sklearn.utils.class_weight import compute_class_weight
+
+CLASSES = ["None", "Insomnia", "Sleep Apnea"]
+
+NUMERIC_FEATURES = [
+    "Age",
+    "Sleep Duration",
+    "Quality of Sleep",
+    "Physical Activity Level",
+    "Stress Level",
+    "Heart Rate",
+    "Daily Steps",
+    "Systolic",
+    "Diastolic",
+]
+
+CATEGORICAL_FEATURES = ["Gender", "Occupation", "BMI Category"]
+
+FEATURE_COLUMNS = NUMERIC_FEATURES + CATEGORICAL_FEATURES
+
+DISTRIBUTION_FEATURES = [
+    "Sleep Duration",
+    "Stress Level",
+    "Heart Rate",
+    "Physical Activity Level",
+]
+
+MODEL_SPECS = [
+    ("logistic_regression", "Logistic Regression"),
+    ("naive_bayes", "Naive Bayes"),
+    ("random_forest", "Random Forest"),
+]
 
 
 def find_dataset_path() -> str:
@@ -48,221 +75,442 @@ def find_dataset_path() -> str:
         os.path.join("data", "sleep_health.csv"),
         os.path.join("data", "Sleep_health_and_lifestyle_dataset.csv"),
         "sleep_health.csv",
-        "Sleep_health_and_lifestyle_dataset.csv"
+        "Sleep_health_and_lifestyle_dataset.csv",
     ]
-    for p in candidates:
-        if os.path.exists(p):
-            return p
+    for path in candidates:
+        if os.path.exists(path):
+            return path
     raise FileNotFoundError(f"Dataset not found. Checked: {candidates}")
 
 
-def build_composite_readiness_label(df: pd.DataFrame) -> pd.Series:
-    """
-    Derive a physiologically-correct binary Readiness_State label using a
-    normalized composite readiness score from the four raw Kaggle features.
-
-    Clinical weighting (evidence-based):
-      - Sleep Duration   : 40% weight (most critical for CNS & muscular repair)
-      - Stress Level     : 30% weight (primary autonomic fatigue driver)  
-      - Activity Minutes : 15% weight (positive aerobic conditioning signal)
-      - Resting Heart Rate: 15% weight (cardiac autonomic recovery proxy)
-
-    Each feature is min-max normalized to [0, 1] with INVERTED direction
-    for features where lower values mean better readiness (Stress, Heart Rate).
-
-    Label = 1 (Optimal) if composite >= median, else 0 (Fatigued).
-    This guarantees ALL four model coefficients have physiologically
-    correct signs: Sleep(+), Stress(-), Activity(+), HR(-).
-    """
-    sleep_norm = (df['Sleep Duration'] - df['Sleep Duration'].min()) / \
-                 (df['Sleep Duration'].max() - df['Sleep Duration'].min())
-
-    stress_norm = 1.0 - (df['Stress Level'] - df['Stress Level'].min()) / \
-                        (df['Stress Level'].max() - df['Stress Level'].min())
-
-    act_norm = (df['Physical Activity Level'] - df['Physical Activity Level'].min()) / \
-               (df['Physical Activity Level'].max() - df['Physical Activity Level'].min())
-
-    hr_norm = 1.0 - (df['Heart Rate'] - df['Heart Rate'].min()) / \
-                    (df['Heart Rate'].max() - df['Heart Rate'].min())
-
-    composite = 0.40 * sleep_norm + 0.30 * stress_norm + 0.15 * act_norm + 0.15 * hr_norm
-    return (composite >= composite.median()).astype(int)
+def make_one_hot() -> OneHotEncoder:
+    try:
+        return OneHotEncoder(handle_unknown="ignore", sparse_output=False)
+    except TypeError:
+        return OneHotEncoder(handle_unknown="ignore", sparse=False)
 
 
-def load_and_preprocess(dataset_path: str):
-    print(f"\n[1/4] Loading real Kaggle biometrics dataset: {dataset_path}")
-    df = pd.read_csv(dataset_path)
-    print(f"      Records loaded: {len(df)} rows, {len(df.columns)} columns")
-
-    y = build_composite_readiness_label(df)
-
-    X = pd.DataFrame({
-        'Sleep_Hours': df['Sleep Duration'].astype(float),
-        'Stress_Index': df['Stress Level'].astype(int),
-        'Activity_Mins': df['Physical Activity Level'].astype(float),
-        'Resting_Heart_Rate': df['Heart Rate'].astype(float)
-    }).dropna()
-    y = y.loc[X.index]
-
-    counts = y.value_counts().to_dict()
-    print(f"      Feature matrix: {X.shape}")
-    print(f"      Class balance : Optimal (1) = {counts.get(1, 0)}, Fatigued (0) = {counts.get(0, 0)}")
-    return X, y
+def make_preprocessor(scale_numeric: bool) -> ColumnTransformer:
+    numeric = StandardScaler() if scale_numeric else "passthrough"
+    return ColumnTransformer(
+        transformers=[
+            ("num", numeric, NUMERIC_FEATURES),
+            ("cat", make_one_hot(), CATEGORICAL_FEATURES),
+        ]
+    )
 
 
-def train_and_evaluate(X: pd.DataFrame, y: pd.Series, output_path: str = "vitalis_model.pkl"):
-    print("\n[2/4] Performing 80/20 Stratified Holdout Split...")
+def make_estimator(key: str):
+    if key == "logistic_regression":
+        return LogisticRegression(
+            C=1.0,
+            class_weight="balanced",
+            max_iter=1000,
+            random_state=42,
+        )
+    if key == "naive_bayes":
+        return GaussianNB()
+    if key == "random_forest":
+        return RandomForestClassifier(
+            n_estimators=200,
+            class_weight="balanced",
+            random_state=42,
+            n_jobs=1,
+        )
+    raise KeyError(key)
+
+
+def make_pipeline(key: str) -> Pipeline:
+    scale = key != "random_forest"
+    return Pipeline(
+        [
+            ("prep", make_preprocessor(scale_numeric=scale)),
+            ("clf", make_estimator(key)),
+        ]
+    )
+
+
+def load_frame(dataset_path: str) -> pd.DataFrame:
+    raw = pd.read_csv(dataset_path)
+    frame = pd.DataFrame()
+    frame["Age"] = raw["Age"].astype(float)
+    frame["Gender"] = raw["Gender"].astype(str)
+    frame["Occupation"] = raw["Occupation"].astype(str)
+    frame["Sleep Duration"] = raw["Sleep Duration"].astype(float)
+    frame["Quality of Sleep"] = raw["Quality of Sleep"].astype(float)
+    frame["Physical Activity Level"] = raw["Physical Activity Level"].astype(float)
+    frame["Stress Level"] = raw["Stress Level"].astype(float)
+    frame["BMI Category"] = (
+        raw["BMI Category"].astype(str).replace({"Normal Weight": "Normal"})
+    )
+    pressure = raw["Blood Pressure"].astype(str).str.split("/", expand=True)
+    frame["Systolic"] = pressure[0].astype(float)
+    frame["Diastolic"] = pressure[1].astype(float)
+    frame["Heart Rate"] = raw["Heart Rate"].astype(float)
+    frame["Daily Steps"] = raw["Daily Steps"].astype(float)
+    frame["Sleep Disorder"] = raw["Sleep Disorder"].fillna("None").astype(str)
+    frame = frame.dropna().reset_index(drop=True)
+    unknown = sorted(set(frame["Sleep Disorder"]) - set(CLASSES))
+    if unknown:
+        raise ValueError(f"Unexpected sleep-disorder labels: {unknown}")
+    return frame
+
+
+def json_ready(value):
+    if isinstance(value, dict):
+        return {str(key): json_ready(item) for key, item in value.items()}
+    if isinstance(value, (list, tuple)):
+        return [json_ready(item) for item in value]
+    if isinstance(value, np.ndarray):
+        return json_ready(value.tolist())
+    if isinstance(value, (np.floating, float)):
+        number = float(value)
+        if np.isnan(number) or np.isinf(number):
+            return None
+        return round(number, 6)
+    if isinstance(value, (np.integer, int)):
+        return int(value)
+    return value
+
+
+def distribution_rows(series: pd.Series, labels: pd.Series):
+    if series.nunique() <= 12:
+        keys = sorted(series.unique().tolist())
+        rows = []
+        for key in keys:
+            row = {"label": f"{key:g}" if isinstance(key, float) else str(key)}
+            mask = series == key
+            for class_name in CLASSES:
+                row[class_name] = int((mask & (labels == class_name)).sum())
+            rows.append(row)
+        return rows
+
+    edges = np.histogram_bin_edges(series.to_numpy(), bins=8)
+    rows = []
+    for index in range(len(edges) - 1):
+        start = float(edges[index])
+        end = float(edges[index + 1])
+        if index == len(edges) - 2:
+            mask = (series >= start) & (series <= end)
+        else:
+            mask = (series >= start) & (series < end)
+        row = {"label": f"{start:.1f}-{end:.1f}"}
+        for class_name in CLASSES:
+            row[class_name] = int((mask & (labels == class_name)).sum())
+        rows.append(row)
+    return rows
+
+
+def representative_preset(frame: pd.DataFrame, class_name: str) -> dict:
+    subset = frame[frame["Sleep Disorder"] == class_name]
+    center = subset[NUMERIC_FEATURES].median()
+    scale = frame[NUMERIC_FEATURES].std().replace(0, 1)
+    distance = ((subset[NUMERIC_FEATURES] - center) / scale).pow(2).sum(axis=1)
+    row = subset.loc[distance.idxmin()]
+    return {
+        "label": class_name,
+        "age": int(round(row["Age"])),
+        "gender": str(row["Gender"]),
+        "occupation": str(row["Occupation"]),
+        "sleep_duration": float(row["Sleep Duration"]),
+        "quality_of_sleep": int(round(row["Quality of Sleep"])),
+        "physical_activity": int(round(row["Physical Activity Level"])),
+        "stress_level": int(round(row["Stress Level"])),
+        "bmi_category": str(row["BMI Category"]),
+        "systolic": int(round(row["Systolic"])),
+        "diastolic": int(round(row["Diastolic"])),
+        "heart_rate": int(round(row["Heart Rate"])),
+        "daily_steps": int(round(row["Daily Steps"])),
+    }
+
+
+def build_dataset_section(frame: pd.DataFrame) -> dict:
+    labels = frame["Sleep Disorder"]
+    counts = labels.value_counts()
+    correlation = frame[NUMERIC_FEATURES].corr().round(4)
+    return {
+        "rows": int(len(frame)),
+        "class_counts": [
+            {"label": class_name, "count": int(counts.get(class_name, 0))}
+            for class_name in CLASSES
+        ],
+        "distributions": {
+            feature: distribution_rows(frame[feature], labels)
+            for feature in DISTRIBUTION_FEATURES
+        },
+        "correlation": {
+            "labels": NUMERIC_FEATURES,
+            "matrix": correlation.to_numpy().tolist(),
+        },
+        "options": {
+            "gender": sorted(frame["Gender"].unique().tolist()),
+            "occupation": sorted(frame["Occupation"].unique().tolist()),
+            "bmi_category": ["Normal", "Overweight", "Obese"],
+        },
+        "presets": {
+            class_name: representative_preset(frame, class_name) for class_name in CLASSES
+        },
+    }
+
+
+def per_class_scores(y_true, y_pred) -> dict:
+    precision = precision_score(
+        y_true, y_pred, labels=CLASSES, average=None, zero_division=0
+    )
+    recall = recall_score(
+        y_true, y_pred, labels=CLASSES, average=None, zero_division=0
+    )
+    return {
+        class_name: {
+            "precision": float(precision[index]),
+            "recall": float(recall[index]),
+        }
+        for index, class_name in enumerate(CLASSES)
+    }
+
+
+def evaluate_model(name: str, pipeline: Pipeline, X_train, X_test, y_train, y_test) -> dict:
+    train_pred = pipeline.predict(X_train)
+    test_pred = pipeline.predict(X_test)
+    matrix = confusion_matrix(y_test, test_pred, labels=CLASSES)
+    cv = StratifiedKFold(n_splits=5, shuffle=True, random_state=42)
+    cv_scores = cross_val_score(
+        make_pipeline(name),
+        pd.concat([X_train, X_test]),
+        pd.concat([y_train, y_test]),
+        cv=cv,
+        scoring="f1_macro",
+        n_jobs=1,
+    )
+    return {
+        "key": name,
+        "accuracy": float(accuracy_score(y_test, test_pred)),
+        "macro_f1": float(f1_score(y_test, test_pred, average="macro", labels=CLASSES)),
+        "train_macro_f1": float(
+            f1_score(y_train, train_pred, average="macro", labels=CLASSES)
+        ),
+        "cv_macro_f1": float(cv_scores.mean()),
+        "cv_macro_f1_std": float(cv_scores.std()),
+        "per_class": per_class_scores(y_test, test_pred),
+        "confusion_matrix": matrix.astype(int).tolist(),
+    }
+
+
+def logistic_loss_curve(X_train: pd.DataFrame, y_train: pd.Series, epochs: int = 40):
+    """Training log-loss of SGD on the logistic objective. Not the scored model."""
+    preprocessor = make_preprocessor(scale_numeric=True)
+    transformed = preprocessor.fit_transform(X_train, y_train)
+    class_order = np.array(sorted(CLASSES))
+    classifier = SGDClassifier(
+        loss="log_loss",
+        penalty="l2",
+        alpha=1e-4,
+        learning_rate="constant",
+        eta0=0.001,
+        random_state=42,
+        tol=None,
+    )
+    curve = []
+    for epoch in range(1, epochs + 1):
+        classifier.partial_fit(transformed, y_train, classes=class_order)
+        probabilities = classifier.predict_proba(transformed)
+        column = {name: index for index, name in enumerate(classifier.classes_)}
+        chosen = np.array([column[label] for label in y_train])
+        picked = probabilities[np.arange(len(chosen)), chosen]
+        loss = float(-np.mean(np.log(np.clip(picked, 1e-15, 1.0))))
+        curve.append({"epoch": epoch, "loss": loss})
+    return curve
+
+
+def forest_oob_curve(X_train: pd.DataFrame, y_train: pd.Series):
+    preprocessor = make_preprocessor(scale_numeric=False)
+    transformed = preprocessor.fit_transform(X_train, y_train)
+    present = np.unique(y_train)
+    weights = compute_class_weight(class_weight="balanced", classes=present, y=y_train)
+    weight_map = {label: float(weight) for label, weight in zip(present, weights)}
+    forest = RandomForestClassifier(
+        n_estimators=40,
+        warm_start=True,
+        oob_score=True,
+        class_weight=weight_map,
+        random_state=42,
+        n_jobs=1,
+    )
+    curve = []
+    for n_trees in range(40, 201, 20):
+        forest.set_params(n_estimators=n_trees)
+        forest.fit(transformed, y_train)
+        curve.append(
+            {
+                "n_trees": n_trees,
+                "oob_error": float(1.0 - forest.oob_score_),
+            }
+        )
+    return curve
+
+
+def build_learning_curves(X: pd.DataFrame, y: pd.Series) -> dict:
+    cv = StratifiedKFold(n_splits=5, shuffle=True, random_state=42)
+    sizes = np.linspace(0.3, 1.0, 5)
+    payload = {"train_sizes": [], "series": {}}
+    for key, _label in MODEL_SPECS:
+        train_sizes, train_scores, val_scores = learning_curve(
+            make_pipeline(key),
+            X,
+            y,
+            cv=cv,
+            train_sizes=sizes,
+            scoring="f1_macro",
+            shuffle=True,
+            random_state=42,
+            n_jobs=1,
+        )
+        payload["train_sizes"] = [int(size) for size in train_sizes]
+        payload["series"][key] = {
+            "train_f1": train_scores.mean(axis=1).tolist(),
+            "val_f1": val_scores.mean(axis=1).tolist(),
+        }
+    return payload
+
+
+def feature_importances(pipeline: Pipeline, limit: int = 12) -> list:
+    preprocessor = pipeline.named_steps["prep"]
+    forest = pipeline.named_steps["clf"]
+    names = preprocessor.get_feature_names_out()
+    cleaned = []
+    for name in names:
+        text = str(name)
+        if text.startswith("num__"):
+            text = text[len("num__") :]
+        elif text.startswith("cat__"):
+            text = text[len("cat__") :]
+        cleaned.append(text)
+    pairs = sorted(
+        zip(cleaned, forest.feature_importances_),
+        key=lambda item: item[1],
+        reverse=True,
+    )
+    return [
+        {"feature": feature, "importance": float(score)}
+        for feature, score in pairs[:limit]
+    ]
+
+
+def train_and_export(frame: pd.DataFrame):
+    X = frame[FEATURE_COLUMNS]
+    y = frame["Sleep Disorder"]
     X_train, X_test, y_train, y_test = train_test_split(
         X, y, test_size=0.20, random_state=42, stratify=y
     )
-    print(f"      Training set : {len(X_train)} samples")
-    print(f"      Holdout test : {len(X_test)} samples")
 
-    # Primary model: Logistic Regression — inherently calibrated, smooth probabilities
-    print("\n[3/4] Training Primary Pipeline (StandardScaler + Logistic Regression, L2, C=1.0)...")
-    primary_pipeline = Pipeline([
-        ('scaler', StandardScaler()),
-        ('classifier', LogisticRegression(C=1.0, penalty='l2', random_state=42))
-    ])
-    primary_pipeline.fit(X_train, y_train)
-
-    # Comparison block: Calibrated SVM (RBF kernel)
-    svm_pipeline = Pipeline([
-        ('scaler', StandardScaler()),
-        ('classifier', CalibratedClassifierCV(
-            estimator=SVC(kernel='rbf', C=1.0, gamma='scale', random_state=42),
-            method='sigmoid', cv=5
-        ))
-    ])
-    svm_pipeline.fit(X_train, y_train)
-
-    # ---- Evaluate Primary Model ----
-    y_pred   = primary_pipeline.predict(X_test)
-    y_proba  = primary_pipeline.predict_proba(X_test)[:, 1]
-
-    acc  = float(accuracy_score(y_test, y_pred))
-    prec = float(precision_score(y_test, y_pred))
-    rec  = float(recall_score(y_test, y_pred))
-    auc  = float(roc_auc_score(y_test, y_proba))
-    cm   = confusion_matrix(y_test, y_pred)
-
-    svm_pred  = svm_pipeline.predict(X_test)
-    svm_proba = svm_pipeline.predict_proba(X_test)[:, 1]
-    svm_acc   = float(accuracy_score(y_test, svm_pred))
-    svm_auc   = float(roc_auc_score(y_test, svm_proba))
-
-    print("\n" + "="*70)
-    print("VITALIS MODEL VALIDATION METRICS")
-    print("="*70)
-    print(f"Primary Algorithm          : Logistic Regression (L2, C=1.0)")
-    print(f"Holdout Test Accuracy      : {acc*100:.2f}%")
-    print(f"Precision Score            : {prec*100:.2f}%")
-    print(f"Recall (Sensitivity)       : {rec*100:.2f}%")
-    print(f"Discrimination (ROC-AUC)   : {auc:.4f}")
-    print(f"SVM Comparison Benchmark   : Accuracy = {svm_acc*100:.2f}%, ROC-AUC = {svm_auc:.4f}")
-
-    print("\nPrediction Accuracy Matrix (Confusion Matrix):")
-    print(f"                 Pred Fatigued (0) | Pred Optimal (1)")
-    print(f"Actual Fatigued:     {cm[0][0]:2d} True Neg     |   {cm[0][1]:2d} False Pos")
-    print(f"Actual Optimal :     {cm[1][0]:2d} False Neg    |   {cm[1][1]:2d} True Pos")
-
-    print("\nModel Coefficients (all signs physiologically correct):")
-    for feat, coef in zip(X.columns, primary_pipeline.named_steps['classifier'].coef_[0]):
-        direction = "GOOD ↑ readiness" if coef > 0 else "CORRECT ↓ readiness"
-        print(f"  {feat:22s}: {coef:+.4f}  [{direction}]")
-
-    # ---- Critical Gradient Verification ----
-    print("\n" + "-"*70)
-    print("CRITICAL GRADIENT VERIFICATION (Teacher Demo Proof)")
-    print("-"*70)
-
-    def test_gradient(label, fixed, vary_field, vary_values):
-        print(f"\n{label}:")
-        prev_p = None
-        monotonic = True
-        for v in vary_values:
-            row = dict(fixed)
-            row[vary_field] = v
-            inp = pd.DataFrame([row])
-            p = primary_pipeline.predict_proba(inp)[0][1] * 100
-            direction = ""
-            if prev_p is not None:
-                if vary_field in ['Sleep_Hours', 'Activity_Mins']:
-                    if p < prev_p - 0.1:
-                        pass
-                    elif p > prev_p + 0.5:
-                        direction = " ← INCREASING (correct ↑)"
-                else:
-                    if p > prev_p + 0.1:
-                        monotonic = False
-                        direction = " ← BUG: should decrease!"
-            print(f"  {vary_field}={v:5.1f}  ->  {p:6.1f}%{direction}")
-            prev_p = p
-        status = "[PASSED]" if monotonic else "[FAILED - non-monotonic]"
-        print(f"  {status}")
-
-    base = {'Sleep_Hours': 7.5, 'Stress_Index': 4, 'Activity_Mins': 60.0, 'Resting_Heart_Rate': 65.0}
-
-    test_gradient(
-        "↑ Stress Index (others fixed) — should DECREASE readiness",
-        {'Sleep_Hours': 7.5, 'Activity_Mins': 60.0, 'Resting_Heart_Rate': 65.0},
-        'Stress_Index', [1, 2, 3, 4, 5, 6, 7, 8]
-    )
-    test_gradient(
-        "↑ Resting Heart Rate (others fixed) — should DECREASE readiness",
-        {'Sleep_Hours': 7.5, 'Stress_Index': 4, 'Activity_Mins': 60.0},
-        'Resting_Heart_Rate', [55, 60, 65, 68, 72, 76, 80, 85]
-    )
-    test_gradient(
-        "↑ Sleep Duration (others fixed) — should INCREASE readiness",
-        {'Stress_Index': 4, 'Activity_Mins': 60.0, 'Resting_Heart_Rate': 65.0},
-        'Sleep_Hours', [5.0, 5.5, 6.0, 6.5, 7.0, 7.5, 8.0, 8.5]
-    )
-    test_gradient(
-        "↑ Activity Duration (others fixed) — should INCREASE readiness",
-        {'Sleep_Hours': 7.5, 'Stress_Index': 4, 'Resting_Heart_Rate': 65.0},
-        'Activity_Mins', [20, 30, 40, 50, 60, 75, 90, 120]
-    )
-
-    # ---- Serialize ----
-    print(f"\n[4/4] Serializing model package to: {output_path}")
-    package = {
-        'pipeline': primary_pipeline,
-        'metrics': {
-            'algorithm': "Logistic Regression (L2, C=1.0) — Physiologically Calibrated",
-            'train_samples': len(X_train),
-            'test_samples': len(X_test),
-            'accuracy': acc,
-            'precision': prec,
-            'recall': rec,
-            'roc_auc': auc,
-            'confusion_matrix': cm.tolist(),
-            'svm_comparison': {
-                'algorithm': "Calibrated SVC (RBF, C=1.0, gamma=scale)",
-                'accuracy': svm_acc,
-                'roc_auc': svm_auc
-            }
-        },
-        'features': list(X.columns),
-        'label_derivation': (
-            "Physiologically-calibrated composite readiness score: "
-            "0.40×norm(Sleep) + 0.30×(1−norm(Stress)) + 0.15×norm(Activity) + 0.15×(1−norm(HR)); "
-            "Label 1 if composite ≥ median, else 0. "
-            "All four model coefficients are physiologically correct in direction."
+    print(f"Training rows: {len(X_train)}    Holdout rows: {len(X_test)}")
+    pipelines = {}
+    metrics = {}
+    for key, label in MODEL_SPECS:
+        print(f"Fitting {label}...")
+        pipeline = make_pipeline(key)
+        pipeline.fit(X_train, y_train)
+        pipelines[key] = pipeline
+        metrics[key] = evaluate_model(key, pipeline, X_train, X_test, y_train, y_test)
+        metrics[key]["label"] = label
+        print(
+            f"  holdout macro-F1 {metrics[key]['macro_f1']:.3f}    "
+            f"accuracy {metrics[key]['accuracy']:.3f}    "
+            f"cv macro-F1 {metrics[key]['cv_macro_f1']:.3f}"
         )
+
+    winner = max(metrics, key=lambda key: metrics[key]["macro_f1"])
+    print(f"Holdout macro-F1 winner: {metrics[winner]['label']}")
+
+    print("Building loss curve, forest curve, and learning curves...")
+    loss_curve = logistic_loss_curve(X_train, y_train)
+    oob_curve = forest_oob_curve(X_train, y_train)
+    curves = build_learning_curves(X, y)
+
+    lab = {
+        "project": "VITALIS sleep-disorder classification",
+        "dataset_source": "Kaggle Sleep Health and Lifestyle Dataset",
+        "classes": CLASSES,
+        "split": {
+            "test_size": 0.2,
+            "random_state": 42,
+            "train_rows": int(len(X_train)),
+            "test_rows": int(len(X_test)),
+            "cv_folds": 5,
+        },
+        "winner": winner,
+        "models": metrics,
+        "comparison": [
+            {
+                "key": key,
+                "model": metrics[key]["label"],
+                "accuracy": metrics[key]["accuracy"],
+                "macro_f1": metrics[key]["macro_f1"],
+                "cv_macro_f1": metrics[key]["cv_macro_f1"],
+            }
+            for key, _label in MODEL_SPECS
+        ],
+        "confusion": {
+            key: metrics[key]["confusion_matrix"] for key, _label in MODEL_SPECS
+        },
+        "loss_curve": loss_curve,
+        "oob_curve": oob_curve,
+        "learning_curves": curves,
+        "feature_importance": feature_importances(pipelines["random_forest"]),
+        "dataset": build_dataset_section(frame),
+        "notes": {
+            "label": "Blank Sleep Disorder cells are coded as None. That is the dataset's no-disorder class.",
+            "loss_curve": "Training log-loss versus epoch from SGDClassifier on the logistic objective. The scored logistic model is LogisticRegression.",
+            "naive_bayes": "Gaussian Naive Bayes has no epoch loss. It is shown on the learning curve and the comparison chart.",
+            "oob_curve": "Random forest out-of-bag error as trees are added. The saved forest is a separate 200-tree fit.",
+            "scope": "Lifestyle screening on 374 public records. Not a medical diagnosis.",
+        },
     }
-    joblib.dump(package, output_path)
-    print(f"      Saved. File size: {os.path.getsize(output_path)} bytes.")
-    print("="*70 + "\n")
-    return package
+    return pipelines, lab, winner
+
+
+def main():
+    dataset_path = find_dataset_path()
+    print(f"Loading {dataset_path}")
+    frame = load_frame(dataset_path)
+    counts = frame["Sleep Disorder"].value_counts().to_dict()
+    print(f"Records: {len(frame)}    Class counts: {counts}")
+
+    pipelines, lab, winner = train_and_export(frame)
+    package = {
+        "pipelines": pipelines,
+        "winner": winner,
+        "classes": CLASSES,
+        "feature_columns": FEATURE_COLUMNS,
+        "metrics": {
+            key: {
+                "label": lab["models"][key]["label"],
+                "accuracy": lab["models"][key]["accuracy"],
+                "macro_f1": lab["models"][key]["macro_f1"],
+                "cv_macro_f1": lab["models"][key]["cv_macro_f1"],
+            }
+            for key, _label in MODEL_SPECS
+        },
+    }
+
+    model_path = "vitalis_model.pkl"
+    joblib.dump(package, model_path)
+    lab_text = json.dumps(json_ready(lab), indent=2)
+    lab_paths = [
+        "vitalis_lab.json",
+        os.path.join("frontend", "public", "vitalis_lab.json"),
+    ]
+    for path in lab_paths:
+        os.makedirs(os.path.dirname(path) or ".", exist_ok=True)
+        with open(path, "w", encoding="utf-8") as handle:
+            handle.write(lab_text)
+        print(f"Wrote {path}")
+    print(f"Wrote {model_path} ({os.path.getsize(model_path)} bytes)")
 
 
 if __name__ == "__main__":
     try:
-        csv_path = find_dataset_path()
-        X_data, y_data = load_and_preprocess(csv_path)
-        train_and_evaluate(X_data, y_data, output_path="vitalis_model.pkl")
-    except Exception as e:
-        print(f"[ERROR] Training failed: {e}", file=sys.stderr)
-        sys.exit(1)
+        main()
+    except Exception as exc:
+        print(f"[ERROR] Training failed: {exc}", file=sys.stderr)
+        raise
