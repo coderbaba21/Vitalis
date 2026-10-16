@@ -97,30 +97,30 @@
     },
     "random_forest": {
       "key": "random_forest",
-      "accuracy": 0.853333,
-      "macro_f1": 0.818747,
-      "train_macro_f1": 0.896108,
-      "cv_macro_f1": 0.833631,
-      "cv_macro_f1_std": 0.025751,
+      "accuracy": 0.92,
+      "macro_f1": 0.879905,
+      "train_macro_f1": 0.914059,
+      "cv_macro_f1": 0.851483,
+      "cv_macro_f1_std": 0.025918,
       "per_class": {
         "None": {
           "precision": 1.0,
-          "recall": 0.863636
+          "recall": 0.977273
         },
         "Insomnia": {
-          "precision": 0.684211,
+          "precision": 0.764706,
           "recall": 0.866667
         },
         "Sleep Apnea": {
-          "precision": 0.722222,
+          "precision": 0.866667,
           "recall": 0.8125
         }
       },
       "confusion_matrix": [
         [
-          38,
-          3,
-          3
+          43,
+          1,
+          0
         ],
         [
           0,
@@ -154,9 +154,9 @@
     {
       "key": "random_forest",
       "model": "Random Forest",
-      "accuracy": 0.853333,
-      "macro_f1": 0.818747,
-      "cv_macro_f1": 0.833631
+      "accuracy": 0.92,
+      "macro_f1": 0.879905,
+      "cv_macro_f1": 0.851483
     }
   ],
   "confusion": {
@@ -196,9 +196,9 @@
     ],
     "random_forest": [
       [
-        38,
-        3,
-        3
+        43,
+        1,
+        0
       ],
       [
         0,
@@ -215,173 +215,173 @@
   "loss_curve": [
     {
       "epoch": 1,
-      "loss": 0.9645401495131671
+      "loss": 0.96454
     },
     {
       "epoch": 2,
-      "loss": 0.869743915078212
+      "loss": 0.869744
     },
     {
       "epoch": 3,
-      "loss": 0.8004059090440773
+      "loss": 0.800406
     },
     {
       "epoch": 4,
-      "loss": 0.747907601195927
+      "loss": 0.747908
     },
     {
       "epoch": 5,
-      "loss": 0.706935440458277
+      "loss": 0.706935
     },
     {
       "epoch": 6,
-      "loss": 0.6741332673920438
+      "loss": 0.674133
     },
     {
       "epoch": 7,
-      "loss": 0.6473090562385406
+      "loss": 0.647309
     },
     {
       "epoch": 8,
-      "loss": 0.6249821136988581
+      "loss": 0.624982
     },
     {
       "epoch": 9,
-      "loss": 0.6061207011349153
+      "loss": 0.606121
     },
     {
       "epoch": 10,
-      "loss": 0.5899856178459507
+      "loss": 0.589986
     },
     {
       "epoch": 11,
-      "loss": 0.5760340077114727
+      "loss": 0.576034
     },
     {
       "epoch": 12,
-      "loss": 0.5638583909227464
+      "loss": 0.563858
     },
     {
       "epoch": 13,
-      "loss": 0.5531469222423209
+      "loss": 0.553147
     },
     {
       "epoch": 14,
-      "loss": 0.5436568111897969
+      "loss": 0.543657
     },
     {
       "epoch": 15,
-      "loss": 0.5351961236867001
+      "loss": 0.535196
     },
     {
       "epoch": 16,
-      "loss": 0.5276110533567002
+      "loss": 0.527611
     },
     {
       "epoch": 17,
-      "loss": 0.5207768433788899
+      "loss": 0.520777
     },
     {
       "epoch": 18,
-      "loss": 0.5145911955309693
+      "loss": 0.514591
     },
     {
       "epoch": 19,
-      "loss": 0.5089694062128456
+      "loss": 0.508969
     },
     {
       "epoch": 20,
-      "loss": 0.5038407227233926
+      "loss": 0.503841
     },
     {
       "epoch": 21,
-      "loss": 0.4991455757762022
+      "loss": 0.499146
     },
     {
       "epoch": 22,
-      "loss": 0.49483345070686197
+      "loss": 0.494833
     },
     {
       "epoch": 23,
-      "loss": 0.4908612307340364
+      "loss": 0.490861
     },
     {
       "epoch": 24,
-      "loss": 0.4871918936485549
+      "loss": 0.487192
     },
     {
       "epoch": 25,
-      "loss": 0.4837934763154644
+      "loss": 0.483793
     },
     {
       "epoch": 26,
-      "loss": 0.480638244398563
+      "loss": 0.480638
     },
     {
       "epoch": 27,
-      "loss": 0.4777020209938101
+      "loss": 0.477702
     },
     {
       "epoch": 28,
-      "loss": 0.4749636395112734
+      "loss": 0.474964
     },
     {
       "epoch": 29,
-      "loss": 0.472404494588531
+      "loss": 0.472404
     },
     {
       "epoch": 30,
-      "loss": 0.470008171005272
+      "loss": 0.470008
     },
     {
       "epoch": 31,
-      "loss": 0.4677601351509124
+      "loss": 0.46776
     },
     {
       "epoch": 32,
-      "loss": 0.465647477025039
+      "loss": 0.465647
     },
     {
       "epoch": 33,
-      "loss": 0.46365869333974247
+      "loss": 0.463659
     },
     {
       "epoch": 34,
-      "loss": 0.46178350426642856
+      "loss": 0.461784
     },
     {
       "epoch": 35,
-      "loss": 0.4600126978868569
+      "loss": 0.460013
     },
     {
       "epoch": 36,
-      "loss": 0.4583379975840124
+      "loss": 0.458338
     },
     {
       "epoch": 37,
-      "loss": 0.4567519485267428
+      "loss": 0.456752
     },
     {
       "epoch": 38,
-      "loss": 0.4552478201245449
+      "loss": 0.455248
     },
     {
       "epoch": 39,
-      "loss": 0.4538195219011219
+      "loss": 0.45382
     },
     {
       "epoch": 40,
-      "loss": 0.4524615306915607
+      "loss": 0.452462
     }
   ],
   "oob_curve": [
     {
       "n_trees": 40,
-      "oob_error": 0.137124
+      "oob_error": 0.153846
     },
     {
       "n_trees": 60,
-      "oob_error": 0.140468
+      "oob_error": 0.12709
     },
     {
       "n_trees": 80,
@@ -389,27 +389,27 @@
     },
     {
       "n_trees": 100,
-      "oob_error": 0.143813
+      "oob_error": 0.140468
     },
     {
       "n_trees": 120,
-      "oob_error": 0.147157
+      "oob_error": 0.137124
     },
     {
       "n_trees": 140,
-      "oob_error": 0.140468
+      "oob_error": 0.133779
     },
     {
       "n_trees": 160,
-      "oob_error": 0.140468
+      "oob_error": 0.130435
     },
     {
       "n_trees": 180,
-      "oob_error": 0.140468
+      "oob_error": 0.123746
     },
     {
       "n_trees": 200,
-      "oob_error": 0.143813
+      "oob_error": 0.123746
     }
   ],
   "learning_curves": {
@@ -455,18 +455,18 @@
       },
       "random_forest": {
         "train_f1": [
-          0.929973,
-          0.916419,
-          0.914861,
-          0.911608,
-          0.911957
+          0.941167,
+          0.929814,
+          0.923258,
+          0.921571,
+          0.923053
         ],
         "val_f1": [
-          0.82451,
-          0.816888,
-          0.830642,
-          0.836142,
-          0.851633
+          0.818443,
+          0.838544,
+          0.832198,
+          0.861406,
+          0.876402
         ]
       }
     }
@@ -474,51 +474,51 @@
   "feature_importance": [
     {
       "feature": "Systolic",
-      "importance": 0.14455
+      "importance": 0.155238
     },
     {
       "feature": "Diastolic",
-      "importance": 0.138809
+      "importance": 0.127284
     },
     {
       "feature": "Sleep Duration",
-      "importance": 0.105532
-    },
-    {
-      "feature": "BMI Category_Overweight",
-      "importance": 0.094851
+      "importance": 0.102179
     },
     {
       "feature": "Age",
-      "importance": 0.090595
+      "importance": 0.092364
+    },
+    {
+      "feature": "BMI Category_Overweight",
+      "importance": 0.088046
     },
     {
       "feature": "BMI Category_Normal",
-      "importance": 0.083978
+      "importance": 0.084913
     },
     {
       "feature": "Physical Activity Level",
-      "importance": 0.071605
+      "importance": 0.075088
     },
     {
       "feature": "Occupation_Nurse",
-      "importance": 0.069063
+      "importance": 0.06699
     },
     {
       "feature": "Daily Steps",
-      "importance": 0.05621
+      "importance": 0.064831
     },
     {
       "feature": "Heart Rate",
-      "importance": 0.037829
-    },
-    {
-      "feature": "Stress Level",
-      "importance": 0.02178
+      "importance": 0.036024
     },
     {
       "feature": "Quality of Sleep",
-      "importance": 0.018939
+      "importance": 0.027096
+    },
+    {
+      "feature": "Stress Level",
+      "importance": 0.017592
     }
   ],
   "dataset": {
